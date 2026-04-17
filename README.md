@@ -4,7 +4,7 @@
 
 PostHog CLI (Rust port) — manage PostHog projects from the terminal. JSON output by default, designed for scripting and AI agent tooling.
 
-This is a Rust port of [posthog-cli](https://github.com/sapihav/poshog-cli) (TypeScript). Feature surface, JSON output shapes, and command-line interface are kept 1:1 with the TS original. Install via Cargo instead of npm.
+This is a Rust port of [posthog-cli](https://github.com/sapihav/posthog-cli) (TypeScript). Feature surface, JSON output shapes, and command-line interface are kept 1:1 with the TS original. Install via Cargo instead of npm.
 
 ## Install
 

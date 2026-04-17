@@ -8,7 +8,7 @@ Forward-looking plan for `posthog-cli-rs`. North star: feel like a frictionless 
 
 ## Rust port status
 
-This crate is a Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/poshog-cli) (currently at v0.1.4 on npm). The TS project has shipped milestones M1 and M2 and has M3 in progress. The Rust port restarts the milestone ladder from scratch — each Rust milestone below must be shipped as its own PR before the next starts.
+This crate is a Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/posthog-cli) (currently at v0.1.4 on npm). The TS project has shipped milestones M1 and M2 and has M3 in progress. The Rust port restarts the milestone ladder from scratch — each Rust milestone below must be shipped as its own PR before the next starts.
 
 - **M0 — Scaffold** ✅ shipped. Project skeleton, docs ported from TS, `cargo build` green.
 - **M1 — Config + login** ✅ shipped. `config set/show`, interactive `login` with browser open + org/project fetch, structured `PostHogError`, stdout-JSON / stderr-error output helpers.
@@ -117,7 +117,7 @@ Make failures machine-readable and add a safety rail for mutations.
 
 ## References
 
-- TS original: https://github.com/sapihav/poshog-cli
+- TS original: https://github.com/sapihav/posthog-cli
 - [Rewrite Your CLI for AI Agents — Justin Poehnelt](https://justin.poehnelt.com/posts/rewrite-your-cli-for-ai-agents/)
 - [Heroku CLI Style Guide](https://devcenter.heroku.com/articles/cli-style-guide)
 - [Linux CLI apps should have a --json flag](https://thomashunter.name/posts/2012-06-06-linux-cli-apps-should-have-a-json-flag)
