@@ -8,6 +8,7 @@ MCPs are not a good fit for AI agent tooling — a CLI is more predictable and c
 - `DESIGN.md` — full spec: stack, commands, API client contract, auth.
 - `ROADMAP.md` — current milestone status and what ships next. **Read this before starting new work.**
 - `OUTPUT.md` — per-command JSON output shapes (mirror of `OUTPUT_SHAPES` in `src/schema.rs`).
+- `docs/backlog/_index.md` — feature/bug/idea queue. See `.claude/rules/backlog.md` for the workflow. Use `/feature-create`, `/bug-fix` (global skills) which already write to `docs/backlog/`.
 
 ## Dev commands
 
