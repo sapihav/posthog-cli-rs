@@ -1,0 +1,3 @@
+target/
+.posthog.json
+.claude/settings.local.json
