@@ -62,3 +62,15 @@ pub fn classify_http_status(status: u16) -> ErrorCode {
         _ => ErrorCode::ApiError,
     }
 }
+
+impl From<std::io::Error> for PostHogError {
+    fn from(e: std::io::Error) -> Self {
+        PostHogError::new(format!("I/O error: {}", e), ErrorCode::ApiError)
+    }
+}
+
+impl From<reqwest::Error> for PostHogError {
+    fn from(e: reqwest::Error) -> Self {
+        PostHogError::new(format!("Network error: {}", e), ErrorCode::ApiError)
+    }
+}

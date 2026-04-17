@@ -3,11 +3,17 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use posthog_cli_rs::config::{
-    load_config_from, save_global_config_to, Config, PartialConfig,
+    load_config_from, require_config_from, save_global_config_to, Config, PartialConfig,
 };
 
 // Env var tests race with each other — serialize them behind a single mutex.
 static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+/// Acquire the env-mutation lock, tolerating poison so a panicking test
+/// doesn't cascade into PoisonError for every subsequent test.
+fn lock_env() -> std::sync::MutexGuard<'static, ()> {
+    ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
 
 fn clear_posthog_env() {
     std::env::remove_var("POSTHOG_API_KEY");
@@ -25,7 +31,7 @@ fn empty_paths() -> (PathBuf, PathBuf) {
 
 #[test]
 fn load_returns_defaults_when_nothing_is_set() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
     let (gp, lp) = empty_paths();
 
@@ -37,7 +43,7 @@ fn load_returns_defaults_when_nothing_is_set() {
 
 #[test]
 fn env_vars_win_over_global_and_local() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
     std::env::set_var("POSTHOG_API_KEY", "phx_env_key");
     std::env::set_var("POSTHOG_PROJECT_ID", "env_project");
@@ -55,7 +61,7 @@ fn env_vars_win_over_global_and_local() {
 
 #[test]
 fn local_config_only_sets_project_id() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
 
     let tmp = tempfile::tempdir().unwrap();
@@ -84,7 +90,7 @@ fn local_config_only_sets_project_id() {
 
 #[test]
 fn global_config_roundtrip() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
 
     let tmp = tempfile::tempdir().unwrap();
@@ -115,7 +121,7 @@ fn global_config_roundtrip() {
 
 #[test]
 fn save_merges_with_existing_values() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
 
     let tmp = tempfile::tempdir().unwrap();
@@ -148,8 +154,76 @@ fn save_merges_with_existing_values() {
 }
 
 #[test]
+fn require_config_returns_ok_when_both_env_vars_set() {
+    let _g = lock_env();
+    clear_posthog_env();
+    std::env::set_var("POSTHOG_API_KEY", "phx_required");
+    std::env::set_var("POSTHOG_PROJECT_ID", "12345");
+
+    let (gp, lp) = empty_paths();
+    let config = require_config_from(&gp, &lp).expect("both set, should be Ok");
+    assert_eq!(config.api_key, "phx_required");
+    assert_eq!(config.project_id, "12345");
+
+    clear_posthog_env();
+}
+
+#[test]
+fn require_config_errors_when_api_key_missing() {
+    let _g = lock_env();
+    clear_posthog_env();
+    std::env::set_var("POSTHOG_PROJECT_ID", "12345");
+
+    let (gp, lp) = empty_paths();
+    let err = require_config_from(&gp, &lp).expect_err("should error");
+    assert_eq!(err.code, posthog_cli_rs::errors::ErrorCode::AuthMissing);
+    assert!(err.message.contains("No API key configured"));
+
+    clear_posthog_env();
+}
+
+#[test]
+fn require_config_errors_when_project_id_missing() {
+    let _g = lock_env();
+    clear_posthog_env();
+    std::env::set_var("POSTHOG_API_KEY", "phx_test");
+
+    let (gp, lp) = empty_paths();
+    let err = require_config_from(&gp, &lp).expect_err("should error");
+    assert_eq!(err.code, posthog_cli_rs::errors::ErrorCode::AuthMissing);
+    assert!(err.message.contains("No project ID configured"));
+
+    clear_posthog_env();
+}
+
+#[test]
+#[cfg(unix)]
+fn saved_config_file_is_chmod_600_on_unix() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let _g = lock_env();
+    clear_posthog_env();
+
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("config.json");
+
+    save_global_config_to(
+        &path,
+        PartialConfig {
+            api_key: Some("phx_secret".into()),
+            project_id: None,
+            host: None,
+        },
+    )
+    .unwrap();
+
+    let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600, "expected 0o600, got {:o}", mode);
+}
+
+#[test]
 fn save_rejects_invalid_host() {
-    let _g = ENV_LOCK.lock().unwrap();
+    let _g = lock_env();
     clear_posthog_env();
 
     let tmp = tempfile::tempdir().unwrap();

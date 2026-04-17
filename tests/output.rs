@@ -1,3 +1,4 @@
+use posthog_cli_rs::commands::config::mask_api_key;
 use posthog_cli_rs::errors::{ErrorCode, PostHogError};
 use posthog_cli_rs::output::{project_fields, render_error, render_json, OutputOptions};
 use serde_json::{json, Value};
@@ -163,6 +164,33 @@ fn error_omits_hint_and_docs_url_when_absent() {
     let parsed: Value = serde_json::from_str(&render_error(&err)).unwrap();
     assert_eq!(parsed["error"].get("hint"), None);
     assert_eq!(parsed["error"].get("docs_url"), None);
+}
+
+// --- mask_api_key ---
+
+#[test]
+fn mask_empty_key_returns_not_set() {
+    assert_eq!(mask_api_key(""), "(not set)");
+}
+
+#[test]
+fn mask_typical_phx_key() {
+    // head=7 chars, "..." separator, tail=4 chars
+    assert_eq!(mask_api_key("phx_abcdefghijklmnop1234"), "phx_abc...1234");
+}
+
+#[test]
+fn mask_short_key_degrades_gracefully() {
+    // 3-char input: head=entire string, tail=entire string → "aaa...aaa"
+    assert_eq!(mask_api_key("aaa"), "aaa...aaa");
+}
+
+#[test]
+fn mask_non_ascii_key_does_not_panic() {
+    // Defensive: even though real API keys are ASCII, masking must be char-safe.
+    let result = mask_api_key("phx_😀😀😀😀😀");
+    // Should not panic and should produce a string (exact formatting is not load-bearing).
+    assert!(result.contains("..."));
 }
 
 #[test]

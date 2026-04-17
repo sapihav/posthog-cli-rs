@@ -40,7 +40,7 @@ enum ConfigCommand {
     Show,
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
     let cli = Cli::parse();
     let opts = OutputOptions {

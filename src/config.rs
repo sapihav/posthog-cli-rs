@@ -92,10 +92,9 @@ pub fn load_config() -> Config {
     load_config_from(&global_config_path(), &cwd.join(LOCAL_CONFIG_NAME))
 }
 
-/// Exported for use by commands that need config. Used by the API client in M2.
-#[allow(dead_code)]
-pub fn require_config() -> Result<Config, PostHogError> {
-    let c = load_config();
+/// Low-level: validate the resolved config given explicit paths. Used by tests.
+pub fn require_config_from(global_path: &Path, local_path: &Path) -> Result<Config, PostHogError> {
+    let c = load_config_from(global_path, local_path);
     if c.api_key.is_empty() {
         return Err(PostHogError::new("No API key configured.", ErrorCode::AuthMissing).with_hint(
             "Run `posthog login` or `posthog config set --api-key <key>`, or set POSTHOG_API_KEY.",
@@ -109,6 +108,13 @@ pub fn require_config() -> Result<Config, PostHogError> {
         );
     }
     Ok(c)
+}
+
+/// Exported for use by commands that need config. Used by the API client in M2.
+#[allow(dead_code)]
+pub fn require_config() -> Result<Config, PostHogError> {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    require_config_from(&global_config_path(), &cwd.join(LOCAL_CONFIG_NAME))
 }
 
 fn strip_trailing_slash(s: &str) -> &str {
@@ -155,6 +161,14 @@ pub fn save_global_config_to(path: &Path, partial: PartialConfig) -> Result<Conf
     fs::write(path, json).map_err(|e| {
         PostHogError::new(format!("Failed to write config: {}", e), ErrorCode::ApiError)
     })?;
+    // The config file contains a plaintext API key — on unix, restrict to owner r/w.
+    // Best-effort: if chmod fails (e.g., on a filesystem without unix perms), swallow
+    // rather than surfacing a misleading "save failed" error.
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o600));
+    }
     Ok(merged)
 }
 

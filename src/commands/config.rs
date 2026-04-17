@@ -37,14 +37,17 @@ pub fn run_set(args: SetArgs, opts: &OutputOptions) {
     }
 }
 
-/// Format key as `phx_xxx...yyyy`. Mirrors TS: `slice(0, 7) + "..." + slice(-4)`.
+/// Format key as `phx_xxx...yyyy`. Mirrors TS `slice(0, 7) + "..." + slice(-4)`.
+/// Char-based (not byte-based) so it can't panic on multibyte input — API keys
+/// are ASCII in practice but the helper is defensive.
 pub fn mask_api_key(key: &str) -> String {
     if key.is_empty() {
         return "(not set)".to_string();
     }
-    let head_end = 7.min(key.len());
-    let tail_start = key.len().saturating_sub(4);
-    format!("{}...{}", &key[..head_end], &key[tail_start..])
+    let char_count = key.chars().count();
+    let head: String = key.chars().take(7).collect();
+    let tail: String = key.chars().skip(char_count.saturating_sub(4)).collect();
+    format!("{}...{}", head, tail)
 }
 
 pub fn run_show(opts: &OutputOptions) {

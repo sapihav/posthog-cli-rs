@@ -10,6 +10,9 @@ use crate::config::{global_config_path, save_global_config, PartialConfig};
 use crate::errors::{ErrorCode, PostHogError};
 use crate::output::{output_error, output_json, OutputOptions};
 
+// `io::Error` and `reqwest::Error` → `PostHogError` via `?` come from the
+// `From` impls in `errors.rs`. Use `?` directly rather than a local helper.
+
 pub const HOST_US: &str = "https://us.posthog.com";
 pub const HOST_EU: &str = "https://eu.posthog.com";
 
@@ -39,17 +42,14 @@ struct ApiList<T> {
     results: Vec<T>,
 }
 
-fn io_err(e: io::Error) -> PostHogError {
-    PostHogError::new(format!("I/O error: {}", e), ErrorCode::ApiError)
-}
-
-fn net_err(e: reqwest::Error) -> PostHogError {
-    PostHogError::new(format!("Network error: {}", e), ErrorCode::ApiError)
-}
-
 /// Fetch all projects an API key can see across its organizations.
-/// Returns `Ok(None)` if the orgs endpoint returns a non-success status,
+/// Returns `Ok(None)` if the orgs endpoint returns any non-success status,
 /// which signals a project-scoped key that cannot enumerate projects.
+///
+/// Parity-preserving TODO: TS returns `null` for ALL non-success statuses on
+/// `/api/organizations/`, so a transient 5xx would also be treated as "scoped
+/// key" here. Consider pinning to 401/403 only once M5 introduces a richer
+/// error path — see ROADMAP.
 pub async fn fetch_projects(host: &str, api_key: &str) -> Result<Option<Vec<Project>>, PostHogError> {
     let base = host.trim_end_matches('/');
     let client = reqwest::Client::new();
@@ -58,14 +58,13 @@ pub async fn fetch_projects(host: &str, api_key: &str) -> Result<Option<Vec<Proj
         .get(format!("{}/api/organizations/", base))
         .header("Authorization", format!("Bearer {}", api_key))
         .send()
-        .await
-        .map_err(net_err)?;
+        .await?;
 
     if !orgs_resp.status().is_success() {
         return Ok(None);
     }
 
-    let orgs: ApiList<Organization> = orgs_resp.json().await.map_err(net_err)?;
+    let orgs: ApiList<Organization> = orgs_resp.json().await?;
 
     let mut projects = Vec::new();
     for org in orgs.results {
@@ -73,8 +72,7 @@ pub async fn fetch_projects(host: &str, api_key: &str) -> Result<Option<Vec<Proj
             .get(format!("{}/api/organizations/{}/projects/", base, org.id))
             .header("Authorization", format!("Bearer {}", api_key))
             .send()
-            .await
-            .map_err(net_err)?;
+            .await?;
 
         if !proj_resp.status().is_success() {
             let status = proj_resp.status().as_u16();
@@ -91,7 +89,7 @@ pub async fn fetch_projects(host: &str, api_key: &str) -> Result<Option<Vec<Proj
             });
         }
 
-        let list: ApiList<Project> = proj_resp.json().await.map_err(net_err)?;
+        let list: ApiList<Project> = proj_resp.json().await?;
         projects.extend(list.results);
     }
     Ok(Some(projects))
@@ -133,7 +131,7 @@ async fn do_login(opts: &OutputOptions) -> Result<(), PostHogError> {
     log("  Region:");
     log("    [1] US (us.posthog.com)");
     log("    [2] EU (eu.posthog.com)");
-    let region = prompt("  Select (1/2): ").map_err(io_err)?;
+    let region = prompt("  Select (1/2): ")?;
     let host = host_for(&region).ok_or_else(|| {
         PostHogError::new("Invalid selection. Choose 1 or 2.", ErrorCode::Validation)
     })?;
@@ -147,7 +145,7 @@ async fn do_login(opts: &OutputOptions) -> Result<(), PostHogError> {
 
     // 3. API key (masked)
     log("");
-    let api_key = prompt_secret("  Paste your API key: ").map_err(io_err)?;
+    let api_key = prompt_secret("  Paste your API key: ")?;
     if api_key.is_empty() || !api_key.starts_with("phx_") {
         return Err(
             PostHogError::new("Invalid API key. Must start with phx_", ErrorCode::Validation)
@@ -188,7 +186,7 @@ async fn resolve_project_id(host: &str, api_key: &str) -> Result<String, PostHog
                 "  Find your project ID at: {}/settings/project#variables",
                 host
             ));
-            let pid = prompt("  Enter your project ID: ").map_err(io_err)?;
+            let pid = prompt("  Enter your project ID: ")?;
             if pid.is_empty() || !pid.chars().all(|c| c.is_ascii_digit()) {
                 return Err(PostHogError::new(
                     "Invalid project ID. Must be a number.",
@@ -212,7 +210,7 @@ async fn resolve_project_id(host: &str, api_key: &str) -> Result<String, PostHog
             for (i, p) in list.iter().enumerate() {
                 log(&format!("    [{}] {} (id: {})", i + 1, p.name, p.id));
             }
-            let choice = prompt("  Select project: ").map_err(io_err)?;
+            let choice = prompt("  Select project: ")?;
             let idx = choice
                 .parse::<usize>()
                 .ok()
