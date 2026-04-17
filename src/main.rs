@@ -1,9 +1,7 @@
-use clap::{CommandFactory, Parser};
+use clap::{CommandFactory, Parser, Subcommand};
+use posthog_cli_rs::{commands, output::OutputOptions};
 
 /// Unofficial PostHog CLI — manage PostHog projects from the terminal.
-///
-/// Rust port of the TypeScript posthog-cli. See ROADMAP.md for milestone
-/// status; commands land in M1 and later.
 #[derive(Parser, Debug)]
 #[command(
     name = "posthog",
@@ -11,16 +9,55 @@ use clap::{CommandFactory, Parser};
     about = "Unofficial PostHog CLI — manage PostHog projects from the terminal",
     after_help = "For agent/tooling use, run `posthog schema` or append `--help --json` to any command\nfor a machine-readable description of the CLI surface."
 )]
-struct Cli {}
+struct Cli {
+    /// Pretty-print JSON output
+    #[arg(long, global = true)]
+    pretty: bool,
+    /// Comma-separated list of fields to keep in object outputs (e.g. --fields key,active)
+    #[arg(long, global = true)]
+    fields: Option<String>,
 
-fn main() {
-    // M0 scaffold: no subcommands wired up yet. Print help when invoked with
-    // no arguments so the binary is self-describing even before M1 lands.
-    if std::env::args().len() <= 1 {
-        let mut cmd = Cli::command();
-        cmd.print_help().expect("failed to print help");
-        println!();
-        return;
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// Interactive setup — authenticate and select a project
+    Login,
+    /// Manage CLI configuration
+    Config {
+        #[command(subcommand)]
+        command: ConfigCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ConfigCommand {
+    /// Set global config values
+    Set(commands::config::SetArgs),
+    /// Show current effective config
+    Show,
+}
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    let cli = Cli::parse();
+    let opts = OutputOptions {
+        pretty: cli.pretty,
+        fields: cli.fields.clone(),
+    };
+
+    match cli.command {
+        None => {
+            let mut cmd = Cli::command();
+            cmd.print_help().expect("help");
+            println!();
+        }
+        Some(Command::Login) => commands::login::run_login(&opts).await,
+        Some(Command::Config { command }) => match command {
+            ConfigCommand::Set(args) => commands::config::run_set(args, &opts),
+            ConfigCommand::Show => commands::config::run_show(&opts),
+        },
     }
-    Cli::parse();
 }
