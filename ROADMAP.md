@@ -11,8 +11,8 @@ Forward-looking plan for `posthog-cli-rs`. North star: feel like a frictionless 
 This crate is a Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/poshog-cli) (currently at v0.1.4 on npm). The TS project has shipped milestones M1 and M2 and has M3 in progress. The Rust port restarts the milestone ladder from scratch — each Rust milestone below must be shipped as its own PR before the next starts.
 
 - **M0 — Scaffold** ✅ shipped. Project skeleton, docs ported from TS, `cargo build` green.
-- **M1 — Config + login** ⏳ next.
-- **M2 — API client + feature flags** — pending.
+- **M1 — Config + login** ✅ shipped. `config set/show`, interactive `login` with browser open + org/project fetch, structured `PostHogError`, stdout-JSON / stderr-error output helpers.
+- **M2 — API client + feature flags** ⏳ next.
 - **M3 — Experiments, insights, dashboards, query** — pending.
 - **M4 — Self-describing CLI (`schema` + `--fields`)** — pending.
 - **M5 — Structured errors + `--dry-run`** — pending.
