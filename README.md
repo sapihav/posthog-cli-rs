@@ -4,15 +4,19 @@
 
 PostHog CLI (Rust port) — manage PostHog projects from the terminal. JSON output by default, designed for scripting and AI agent tooling.
 
-This is a Rust port of [posthog-cli](https://github.com/sapihav/poshog-cli) (TypeScript). Feature surface, JSON output shapes, and command-line interface are kept 1:1 with the TS original. Install via Cargo instead of npm.
+This is a Rust port of [posthog-cli](https://github.com/sapihav/posthog-cli) (TypeScript). Feature surface, JSON output shapes, and command-line interface are kept 1:1 with the TS original. Install via Cargo instead of npm.
 
 ## Install
 
+Not yet on crates.io — build from source:
+
 ```bash
-cargo install posthog-cli-rs
+git clone https://github.com/sapihav/posthog-cli-rust
+cd posthog-cli-rust
+cargo install --path .
 ```
 
-The binary is installed as `posthog`.
+The binary is installed as `posthog`. Crates.io publish is planned — see `ROADMAP.md`.
 
 ## Setup
 
@@ -33,29 +37,20 @@ export POSTHOG_PROJECT_ID=12345
 
 ```
 posthog login
-posthog config set|show
-posthog flags list|get|create|update|enable|disable|delete
-posthog experiments list|get|results|launch|pause|end
-posthog insights list|get
-posthog dashboards list|get
-posthog query "<hogql>"
+posthog config set [--api-key ...] [--project-id ...] [--host ...]
+posthog config show
 ```
+
+More commands (`flags`, `experiments`, `insights`, `dashboards`, `query`) are planned — see `ROADMAP.md`.
 
 ## Examples
 
 ```bash
-# List active feature flags
-posthog flags list --active --pretty
+# Interactive setup
+posthog login
 
-# Create and enable a flag
-posthog flags create --key new-feature --name "New Feature" --rollout 50
-posthog flags enable new-feature
-
-# Run a HogQL query
-posthog query "SELECT event, count() FROM events GROUP BY event LIMIT 10" --pretty
-
-# Pipe JSON to jq
-posthog flags list | jq '.[].key'
+# Show current config (apiKey is masked)
+posthog config show --pretty
 ```
 
 ## Output

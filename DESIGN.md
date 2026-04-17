@@ -3,7 +3,7 @@
 ## Context
 PostHog provides a web UI, SDK, API, and MCP server but no proper CLI. The existing official `@posthog/cli` (Rust) is very limited (login, query, sourcemap only). MCPs in general are not a good fit for AI agent tooling — terminal CLI tools are more predictable, composable, and debuggable for agents like Claude Code. Goal: a Rust CLI (`posthog`) that Claude Code can invoke via bash to manage PostHog projects — JSON output by default, core operations only.
 
-This project is a Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/poshog-cli). Feature surface and JSON output shapes are kept 1:1 with the TS original; only the implementation stack differs.
+This project is a Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/posthog-cli). Feature surface and JSON output shapes are kept 1:1 with the TS original; only the implementation stack differs.
 
 ---
 

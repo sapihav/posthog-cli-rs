@@ -1,6 +1,6 @@
 # posthog-cli-rs
 
-PostHog CLI (`posthog` binary) — manage PostHog projects from the terminal. Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/poshog-cli).
+PostHog CLI (`posthog` binary) — manage PostHog projects from the terminal. Rust port of the TypeScript [posthog-cli](https://github.com/sapihav/posthog-cli).
 MCPs are not a good fit for AI agent tooling — a CLI is more predictable and composable.
 
 ## Sources of truth
@@ -50,7 +50,7 @@ src/
 - **One milestone = one PR**, ≤500 LoC app code. Refuse to batch milestones; push back once, comply only if user insists.
 - **When changing a command's JSON output**, update **both** `OUTPUT_SHAPES` in `src/schema.rs` AND `OUTPUT.md`. They must not drift.
 - **Dogfood the CLI**: for ad-hoc verification during dev, prefer `cargo run -- <cmd>` over the PostHog MCP — this CLI is the agent-facing surface we're building.
-- **Parity with TS original**: when in doubt about behaviour, consult the TS source at `/Users/vlads/src/poshog-cli` (if available) or https://github.com/sapihav/poshog-cli. JSON shapes, error codes, and flag semantics must match.
+- **Parity with TS original**: when in doubt about behaviour, consult the TS source at `/Users/vlads/src/posthog-cli` (if available) or https://github.com/sapihav/posthog-cli. JSON shapes, error codes, and flag semantics must match.
 
 ## When to delegate to subagents
 
