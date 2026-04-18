@@ -56,8 +56,9 @@ install() {
     info "Installing posthog-cli-rs ${LATEST_VERSION} for ${TARGET}..."
 
     ARCHIVE_NAME="${BINARY_NAME}-${TARGET}.tar.gz"
+    CHECKSUM_NAME="${BINARY_NAME}-${TARGET}.sha256"
     DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/${ARCHIVE_NAME}"
-    CHECKSUM_URL="${DOWNLOAD_URL}.sha256"
+    CHECKSUM_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/${CHECKSUM_NAME}"
 
     TMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TMP_DIR"' EXIT
@@ -68,15 +69,15 @@ install() {
     fi
 
     info "Downloading checksum..."
-    if ! curl -sSL "$CHECKSUM_URL" -o "${TMP_DIR}/${ARCHIVE_NAME}.sha256"; then
+    if ! curl -sSL "$CHECKSUM_URL" -o "${TMP_DIR}/${CHECKSUM_NAME}"; then
         error "Failed to download checksum. Cannot verify integrity."
     fi
 
     info "Verifying checksum..."
     cd "$TMP_DIR"
-    EXPECTED=$(awk '{print $1}' "${ARCHIVE_NAME}.sha256")
-    if [ -z "$EXPECTED" ]; then
-        error "No checksum found in ${ARCHIVE_NAME}.sha256"
+    EXPECTED=$(awk '{print $1}' "${CHECKSUM_NAME}")
+    if [ -z "$EXPECTED" ] || [ "$EXPECTED" = "Not" ]; then
+        error "No checksum found in ${CHECKSUM_NAME} (got: '${EXPECTED}'). Release may be incomplete."
     fi
     if command -v sha256sum &> /dev/null; then
         ACTUAL=$(sha256sum "${ARCHIVE_NAME}" | awk '{print $1}')
