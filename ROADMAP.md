@@ -96,14 +96,62 @@ Make failures machine-readable and add a safety rail for mutations.
 
 ---
 
-## Deferred (next rounds, in rough order)
+---
 
-1. **Resource coverage parity with the MCP** — `persons`, `cohorts`, `surveys`, `error tracking`, `annotations`, `actions`, `event definitions`, `session recordings`. Each is small (one resource per PR) and uses the existing generic CRUD client.
-2. **Trust signals** — GitHub Actions CI (build + test on stable + beta), `CHANGELOG.md`, `CONTRIBUTING.md`, issue/PR templates, semver discipline, crates.io publish automation.
-3. **Multi-project switching** — `posthog use <project>` and equivalent for orgs.
-4. **Discoverability** — community post in `posthog/posthog`, docs PR mentioning the CLI under tooling, crates.io badges, crates.io publish.
-5. **Claude Code integration kit** — slash commands, CLAUDE.md snippet, recipes. *Optional, opt-in only.* Revisit after M1–M5 stabilize the agent surface.
-6. **Self-telemetry** (opt-in, off by default) — emit anonymous usage events to PostHog itself. Eat your own dogfood; builds the case to PostHog that real people use it.
+## MCP parity plan (M6 → M16) — mirrors TS `posthog-cli` M4 → M14
+
+After M5 reaches TS v0.1.4 + M3 parity, the Rust crate must mirror the TS CLI's MCP-parity roadmap milestone-for-milestone. Same ordering, same acceptance criteria, same JSON output shapes — only the implementation language differs.
+
+**Hard rule:** no Rust milestone may ship ahead of the corresponding TS milestone being merged and stable. If a Rust contributor wants to unblock a later milestone, the fix is to ship the TS version first.
+
+Rust milestone → TS milestone map:
+
+| Rust | TS | Scope |
+|---|---|---|
+| **M6** | M4 | Contract flags hardening (`--quiet`, `--verbose`, `--out`, `--limit`, stdin `-`, env-only auth mode) |
+| **M7** | M5 | Feature flags full parity (copy, dependents, status, blast-radius, evaluation-reasons, scheduled changes) |
+| **M8** | M6 | HogQL runner v2 (`query run --params`, `query nl`, `query saved list/get/run`) |
+| **M9** | M7 | Experiments full CRUD (create, update, delete, archive, reset, resume, ship-variant) |
+| **M10** | M8 | Insights + dashboards write surface (create/update/delete + add-insight + reorder-tiles + run) |
+| **M11** | M9 | Persons + cohorts (including static cohort add/remove) |
+| **M12** | M10 | Surveys (CRUD + per-survey + global stats) |
+| **M13** | M11 | Error tracking (issues list/get/update/merge/split, rules, query) |
+| **M14** | M12 | Taxonomy (actions, annotations, event-definitions, property-definitions) |
+| **M15** | M13 | Session replays + playlists |
+| **M16** | M14 | Query wrappers (funnel/trends/lifecycle/retention/paths/stickiness) |
+
+For the detailed scope and acceptance criteria of each Rust milestone, consult the corresponding section in `/Users/vlads/src/clis/posthog-cli/ROADMAP.md` — **this crate treats the TS ROADMAP as the spec**. When the TS spec changes, this file's map must be updated in the same PR.
+
+### Parity test
+
+Starting at M6, every milestone PR must include a `tests/parity_<domain>.rs` integration test that:
+1. Runs a fixed scenario via the TS CLI (`npx posthog@0.1.4 …` or pinned version) and captures its JSON output.
+2. Runs the same scenario via the Rust CLI and captures its JSON output.
+3. Asserts equality (modulo `elapsed_ms` and any documented Rust-specific fields).
+
+The TS CLI is the reference implementation; the Rust crate is the mirror.
+
+---
+
+## Long tail MCP parity (stretch)
+
+Same deferred list as TS ROADMAP §"Deferred — long tail MCP parity". Only tackle when concrete demand surfaces:
+
+1. LLM analytics + evaluations (12 tools)
+2. Data warehouse views + endpoints (16 tools)
+3. CDP functions + templates (8 tools)
+4. Notebooks, alerts, subscriptions, proxies, integrations, workflows, conversations, roles, org/project switching, early-access features, prompts (~50 tools combined)
+5. `docs-search` and `entity-search` — standalone, low-effort, high-value; ship any time.
+
+---
+
+## Deferred (non-parity infrastructure)
+
+1. **Trust signals** — GitHub Actions CI (build + test on stable + beta), `CHANGELOG.md`, `CONTRIBUTING.md`, issue/PR templates, semver discipline, crates.io publish automation.
+2. **Multi-project switching** — `posthog use <project>` and equivalent for orgs.
+3. **Discoverability** — community post in `posthog/posthog`, docs PR mentioning the CLI under tooling, crates.io badges, crates.io publish.
+4. **Claude Code integration kit** — slash commands, CLAUDE.md snippet, recipes. *Optional, opt-in only.*
+5. **Self-telemetry** (opt-in, off by default) — emit anonymous usage events to PostHog itself. Eat your own dogfood; builds the case to PostHog that real people use it.
 
 ---
 
