@@ -8,11 +8,21 @@ This is a Rust port of [posthog-cli](https://github.com/sapihav/posthog-cli) (Ty
 
 ## Install
 
-Not yet on crates.io — build from source:
+**One-line install (recommended)** — no Rust toolchain required:
 
 ```bash
-git clone https://github.com/sapihav/posthog-cli-rust
-cd posthog-cli-rust
+curl -sSL https://raw.githubusercontent.com/sapihav/posthog-cli-rs/main/install.sh | bash
+```
+
+Downloads the latest release for your OS/arch, verifies SHA-256, installs `posthog` to `/usr/local/bin`. Override with `INSTALL_DIR=$HOME/.local/bin`. Requires `curl` + `jq`.
+
+Note: the installed binary collides with the official abandoned `@posthog/cli` if that's on your PATH. This one wins if `/usr/local/bin` is ahead of `~/.cargo/bin`.
+
+**From source** (requires Rust 1.70+):
+
+```bash
+git clone https://github.com/sapihav/posthog-cli-rs
+cd posthog-cli-rs
 cargo install --path .
 ```
 
